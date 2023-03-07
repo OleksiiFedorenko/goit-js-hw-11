@@ -11,12 +11,17 @@ body {
   background-color: #fafafa;
   color: #212121;
   line-height: 1.5;
+  text-align: center;
 }
 
 button {
   cursor: pointer;
 }
 
+.is-hidden {
+  display: none;
+}
+
 .search-form {
-  text-align: center;
+  /* text-align: center; */
 }

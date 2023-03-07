@@ -3,32 +3,65 @@ import { Notify } from 'notiflix/build/notiflix-notify-aio';
 // import { fetchImages } from './js/fetch-images';
 import './css/styles.css';
 
-const KEY = '34154257-bf748b84cc835cf9e78cea2f7';
-const BASE_URL = 'https://pixabay.com/api/';
-let pageNumber = 1;
 const refs = {
   searchForm: document.querySelector('.search-form'),
   gallery: document.querySelector('.gallery'),
+  loadMoreBtn: document.querySelector('.load-more'),
 };
+
+const KEY = '34154257-bf748b84cc835cf9e78cea2f7';
+const BASE_URL = 'https://pixabay.com/api/';
+let pageNumber = 1;
+let formInput = null;
+let imagesTillLimit = null;
 
 refs.searchForm.addEventListener('submit', onSubmit);
 
 function onSubmit(e) {
   e.preventDefault();
-  const input = e.currentTarget.searchQuery.value.trim();
-  const res = fetchImages(input);
-  console.log(res);
-  res.then(checkData);
+  refs.loadMoreBtn.classList.add('is-hidden');
+  formInput = e.currentTarget.searchQuery.value.trim();
+
+  if (!formInput)
+    return Notify.failure(
+      'Sorry, there are no images matching your search query. Please try again.'
+    );
+
+  fetchImages(formInput).then(drawInitMarkup);
+  // console.log(fetchImages(formInput));
 }
 
-function checkData({ hits, totalHits }) {
+function onClick() {
+  if (imagesTillLimit <= 0) {
+    refs.loadMoreBtn.classList.add('is-hidden');
+    Notify.warning(
+      "We're sorry, but you've reached the end of search results."
+    );
+  }
+
+  console.log(imagesTillLimit);
+  imagesTillLimit -= 40;
+  console.log(imagesTillLimit);
+  fetchImages(formInput).then(drawAddMarkup);
+}
+
+function drawInitMarkup({ hits, totalHits }) {
   if (!totalHits) {
     Notify.failure(
       'Sorry, there are no images matching your search query. Please try again.'
     );
   } else {
     refs.gallery.innerHTML = createGalleryMarkup(hits);
+    refs.loadMoreBtn.classList.remove('is-hidden');
+    refs.loadMoreBtn.addEventListener('click', onClick);
+    pageNumber += 1;
+    imagesTillLimit = totalHits - 40;
   }
+}
+
+function drawAddMarkup({ hits }) {
+  refs.gallery.insertAdjacentHTML('beforeend', createGalleryMarkup(hits));
+  pageNumber += 1;
 }
 
 function createGalleryMarkup(gallery) {

@@ -1,6 +1,8 @@
-import axios from 'axios';
+// import axios from 'axios';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
-// import { fetchImages } from './js/fetch-images';
+import SimpleLightbox from 'simplelightbox';
+import GalleryService from './js/gallery-service';
+import 'simplelightbox/dist/simple-lightbox.min.css';
 import './css/styles.css';
 
 const refs = {
@@ -8,41 +10,33 @@ const refs = {
   gallery: document.querySelector('.gallery'),
   loadMoreBtn: document.querySelector('.load-more'),
 };
-
-const KEY = '34154257-bf748b84cc835cf9e78cea2f7';
-const BASE_URL = 'https://pixabay.com/api/';
-let pageNumber = 1;
-let formInput = null;
-let imagesTillLimit = null;
+const galleryService = new GalleryService();
+const lightbox = new SimpleLightbox('.gallery a');
 
 refs.searchForm.addEventListener('submit', onSubmit);
 
 function onSubmit(e) {
   e.preventDefault();
   refs.loadMoreBtn.classList.add('is-hidden');
-  formInput = e.currentTarget.searchQuery.value.trim();
+  galleryService.query = e.currentTarget.searchQuery.value.trim();
+  galleryService.resetPage();
 
-  if (!formInput)
-    return Notify.failure(
-      'Sorry, there are no images matching your search query. Please try again.'
-    );
+  if (!galleryService.query)
+    return Notify.info("Please type what you're looking for.");
 
-  fetchImages(formInput).then(drawInitMarkup);
-  // console.log(fetchImages(formInput));
+  galleryService.fetchImages().then(drawInitMarkup);
 }
 
 function onClick() {
-  if (imagesTillLimit <= 0) {
+  if (galleryService.capacity <= 0) {
     refs.loadMoreBtn.classList.add('is-hidden');
     Notify.warning(
       "We're sorry, but you've reached the end of search results."
     );
+    return;
   }
 
-  console.log(imagesTillLimit);
-  imagesTillLimit -= 40;
-  console.log(imagesTillLimit);
-  fetchImages(formInput).then(drawAddMarkup);
+  galleryService.fetchImages().then(drawAddMarkup);
 }
 
 function drawInitMarkup({ hits, totalHits }) {
@@ -51,17 +45,18 @@ function drawInitMarkup({ hits, totalHits }) {
       'Sorry, there are no images matching your search query. Please try again.'
     );
   } else {
+    galleryService.capacity = totalHits - 40;
     refs.gallery.innerHTML = createGalleryMarkup(hits);
+    lightbox.refresh();
+    Notify.success(`Hooray! We found ${totalHits} images.`);
     refs.loadMoreBtn.classList.remove('is-hidden');
     refs.loadMoreBtn.addEventListener('click', onClick);
-    pageNumber += 1;
-    imagesTillLimit = totalHits - 40;
   }
 }
 
 function drawAddMarkup({ hits }) {
   refs.gallery.insertAdjacentHTML('beforeend', createGalleryMarkup(hits));
-  pageNumber += 1;
+  lightbox.refresh();
 }
 
 function createGalleryMarkup(gallery) {
@@ -77,7 +72,9 @@ function createGalleryMarkup(gallery) {
         downloads,
       }) =>
         `<div class="photo-card">
-        <img src="${webformatURL}" alt="${tags}" loading="lazy" />
+        <a href="${largeImageURL}">
+          <img src="${webformatURL}" alt="${tags}" loading="lazy" />
+        </a>
         <div class="info">
           <p class="info-item">
             <b>Likes</b>
@@ -99,21 +96,4 @@ function createGalleryMarkup(gallery) {
       </div>`
     )
     .join('');
-}
-
-function fetchImages(input) {
-  const config = {
-    url: BASE_URL,
-    params: {
-      key: KEY,
-      q: input,
-      image_type: 'photo',
-      orientation: 'horizontal',
-      safesearch: true,
-      page: pageNumber,
-      per_page: 40,
-    },
-  };
-
-  return axios(config).then(response => response.data);
 }

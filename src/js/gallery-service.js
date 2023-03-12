@@ -10,7 +10,7 @@ export default class GalleryService {
     this.imagesCapacity = 0;
   }
 
-  fetchImages() {
+  async fetchImages() {
     const config = {
       url: BASE_URL,
       params: {
@@ -24,11 +24,14 @@ export default class GalleryService {
       },
     };
 
-    return axios(config).then(({ data }) => {
+    try {
+      const fetchedData = await axios(config);
       this.incrementPage();
       this.decrementCapacity();
-      return data;
-    });
+      return fetchedData.data;
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   incrementPage() {

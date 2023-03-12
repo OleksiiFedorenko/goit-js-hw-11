@@ -18,7 +18,7 @@ const infiniteObserver = new IntersectionObserver(onObserve, observerOptions);
 
 refs.searchForm.addEventListener('submit', onSubmit);
 
-function onSubmit(e) {
+async function onSubmit(e) {
   e.preventDefault();
 
   const input = e.currentTarget.searchQuery.value.trim();
@@ -28,12 +28,14 @@ function onSubmit(e) {
   galleryService.query = input;
   galleryService.resetPage();
 
-  galleryService
-    .fetchImages()
-    .then(scrollToTheTop)
-    .then(drawInitMarkup)
-    .then(addObserver)
-    .catch(console.log);
+  try {
+    const fetchedImages = await galleryService.fetchImages();
+    scrollToTheTop();
+    drawInitMarkup(fetchedImages);
+    addObserver();
+  } catch (error) {
+    console.log(error);
+  }
 }
 
 function onObserve([entry], observer) {
@@ -42,7 +44,7 @@ function onObserve([entry], observer) {
   loadMorePhotos();
 }
 
-function loadMorePhotos() {
+async function loadMorePhotos() {
   if (galleryService.capacity <= 0) {
     // refs.loadMoreBtn.classList.add('is-hidden');
     Notify.warning(
@@ -51,12 +53,14 @@ function loadMorePhotos() {
     return;
   }
 
-  galleryService
-    .fetchImages()
-    .then(drawAddMarkup)
-    // .then(smoothScroll)
-    .then(addObserver)
-    .catch(console.log);
+  try {
+    const fetchedImages = await galleryService.fetchImages();
+    drawAddMarkup(fetchedImages);
+    //smoothScroll()
+    addObserver();
+  } catch (error) {
+    console.log(error);
+  }
 }
 
 function drawInitMarkup({ hits, totalHits }) {
@@ -123,12 +127,11 @@ function addObserver() {
   infiniteObserver.observe(lastPhotoCard);
 }
 
-function scrollToTheTop(promise) {
+function scrollToTheTop() {
   window.scroll({
     top: 0,
     behavior: 'smooth',
   });
-  return promise;
 }
 
 function smoothScroll() {

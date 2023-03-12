@@ -1,5 +1,4 @@
 import axios from 'axios';
-// import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
 const API_KEY = '34154257-bf748b84cc835cf9e78cea2f7';
 const BASE_URL = 'https://pixabay.com/api/';
@@ -28,7 +27,6 @@ export default class GalleryService {
     return axios(config).then(({ data }) => {
       this.incrementPage();
       this.decrementCapacity();
-      console.log(data);
       return data;
     });
   }

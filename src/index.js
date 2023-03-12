@@ -1,4 +1,3 @@
-// import axios from 'axios';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import SimpleLightbox from 'simplelightbox';
 import GalleryService from './js/gallery-service';
@@ -8,35 +7,55 @@ import './css/styles.css';
 const refs = {
   searchForm: document.querySelector('.search-form'),
   gallery: document.querySelector('.gallery'),
-  loadMoreBtn: document.querySelector('.load-more'),
+  // loadMoreBtn: document.querySelector('.load-more'),
+};
+const observerOptions = {
+  rootMargin: '100px',
 };
 const galleryService = new GalleryService();
 const lightbox = new SimpleLightbox('.gallery a');
+const infiniteObserver = new IntersectionObserver(onObserve, observerOptions);
 
 refs.searchForm.addEventListener('submit', onSubmit);
 
 function onSubmit(e) {
   e.preventDefault();
-  refs.loadMoreBtn.classList.add('is-hidden');
+  // refs.loadMoreBtn.classList.add('is-hidden');
   galleryService.query = e.currentTarget.searchQuery.value.trim();
   galleryService.resetPage();
 
   if (!galleryService.query)
     return Notify.info("Please type what you're looking for.");
 
-  galleryService.fetchImages().then(drawInitMarkup);
+  galleryService
+    .fetchImages()
+    .then(drawInitMarkup)
+    .then(scrollToTheTop)
+    .then(addObserver)
+    .catch(console.log);
 }
 
-function onClick() {
+function onObserve([entry], observer) {
+  if (!entry.isIntersecting) return;
+  observer.unobserve(entry.target);
+  loadMorePhotos();
+}
+
+function loadMorePhotos() {
   if (galleryService.capacity <= 0) {
-    refs.loadMoreBtn.classList.add('is-hidden');
+    // refs.loadMoreBtn.classList.add('is-hidden');
     Notify.warning(
       "We're sorry, but you've reached the end of search results."
     );
     return;
   }
 
-  galleryService.fetchImages().then(drawAddMarkup);
+  galleryService
+    .fetchImages()
+    .then(drawAddMarkup)
+    // .then(smoothScroll)
+    .then(addObserver)
+    .catch(console.log);
 }
 
 function drawInitMarkup({ hits, totalHits }) {
@@ -49,8 +68,8 @@ function drawInitMarkup({ hits, totalHits }) {
     refs.gallery.innerHTML = createGalleryMarkup(hits);
     lightbox.refresh();
     Notify.success(`Hooray! We found ${totalHits} images.`);
-    refs.loadMoreBtn.classList.remove('is-hidden');
-    refs.loadMoreBtn.addEventListener('click', onClick);
+    // refs.loadMoreBtn.classList.remove('is-hidden');
+    // refs.loadMoreBtn.addEventListener('click', loadMorePhotos);
   }
 }
 
@@ -96,4 +115,26 @@ function createGalleryMarkup(gallery) {
       </div>`
     )
     .join('');
+}
+
+function addObserver() {
+  const lastPhotoCard = document.querySelector('.photo-card:last-child');
+  infiniteObserver.observe(lastPhotoCard);
+}
+
+function scrollToTheTop() {
+  window.scroll({
+    top: 0,
+    behavior: 'smooth',
+  });
+}
+
+function smoothScroll() {
+  const { height: cardHeight } =
+    refs.gallery.firstElementChild.getBoundingClientRect();
+
+  window.scrollBy({
+    top: cardHeight * 2,
+    behavior: 'smooth',
+  });
 }

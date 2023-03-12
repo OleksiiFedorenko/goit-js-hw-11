@@ -10,7 +10,7 @@ const refs = {
   // loadMoreBtn: document.querySelector('.load-more'),
 };
 const observerOptions = {
-  rootMargin: '100px',
+  rootMargin: '100px 0px 0px 0px',
 };
 const galleryService = new GalleryService();
 const lightbox = new SimpleLightbox('.gallery a');
@@ -20,17 +20,18 @@ refs.searchForm.addEventListener('submit', onSubmit);
 
 function onSubmit(e) {
   e.preventDefault();
-  // refs.loadMoreBtn.classList.add('is-hidden');
-  galleryService.query = e.currentTarget.searchQuery.value.trim();
-  galleryService.resetPage();
 
-  if (!galleryService.query)
-    return Notify.info("Please type what you're looking for.");
+  const input = e.currentTarget.searchQuery.value.trim();
+  if (!input) return Notify.info("Please type what you're looking for.");
+
+  // refs.loadMoreBtn.classList.add('is-hidden');
+  galleryService.query = input;
+  galleryService.resetPage();
 
   galleryService
     .fetchImages()
-    .then(drawInitMarkup)
     .then(scrollToTheTop)
+    .then(drawInitMarkup)
     .then(addObserver)
     .catch(console.log);
 }
@@ -122,11 +123,12 @@ function addObserver() {
   infiniteObserver.observe(lastPhotoCard);
 }
 
-function scrollToTheTop() {
+function scrollToTheTop(promise) {
   window.scroll({
     top: 0,
     behavior: 'smooth',
   });
+  return promise;
 }
 
 function smoothScroll() {

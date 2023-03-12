@@ -8,13 +8,20 @@
   </head>
   <body>
     <form class="search-form" id="search-form">
-      <input
-        type="text"
-        name="searchQuery"
-        autocomplete="off"
-        placeholder="Search images..."
-      />
-      <button type="submit">Search</button>
+      <div class="search-container">
+        <input
+          class="search-input"
+          type="text"
+          name="searchQuery"
+          autocomplete="off"
+          placeholder="Search images..."
+        />
+        <button class="search-button" type="submit">
+          <svg width="16" height="16">
+            <use href="./images/icons.svg#search"></use>
+          </svg>
+        </button>
+      </div>
     </form>
     <div class="gallery"></div>
     <!-- <button class="load-more is-hidden" type="button">Load more</button> -->
